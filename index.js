@@ -28,7 +28,8 @@ module.exports = class extends mofron.class.Component {
             this.confmng().add('accentColor', { type:'color', init:[220,220,220] });
             this.confmng().add('baseColor', { type:'color', init:[255,255,255] });
             this.confmng().add('select', { type:'number' });
-            
+            this.confmng().add('selectEvent', { type:'event', list:true });
+
 	    if (0 < arguments.length) {
                 this.config(p1);
             }
@@ -51,11 +52,12 @@ module.exports = class extends mofron.class.Component {
 		    size:'0.25rem',
 		    style:{
 		        'text-align':  'center',
-			'white-space': 'nowrap',
-			'padding':     '0.1rem'
-                    },
+		    	'white-space': 'nowrap',
+		        'padding':     '0.1rem'
+		    }
 		}
             );
+
 	    this.frame(
                 Frame,
                 {
@@ -90,6 +92,10 @@ module.exports = class extends mofron.class.Component {
                 throw new Error('invalid parameter');
             }
             let chd = this.child();
+            if (0 === chd.length) {
+                return;
+	    }
+
 	    for (let idx in chd) {
                 chd[idx].baseColor(this.baseColor());
 	    }
@@ -100,9 +106,30 @@ module.exports = class extends mofron.class.Component {
             throw e;
         }
     }
+
+    selectEvent (fnc, prm) {
+        try {
+            if (undefined === fnc) {
+                return this.confmng('selectEvent');
+	    }
+	    this.confmng('selectEvent', [fnc,prm]);
+	} catch (e) {
+            console.error(e.stack);
+            throw e;
+	}
+    }
     
     tab (prm, cnf) {
         try {
+	    if (undefined === prm) {
+                let chd = this.child();
+		let ret = [];
+		for (let cidx in chd) {
+                    ret.push(chd[cidx].child()[0].text());
+		}
+		return ret;
+	    }
+
             let frame = this.frame();
             let text  = this.text();
             
@@ -118,7 +145,7 @@ module.exports = class extends mofron.class.Component {
 	        text: prm,
 		//style: { 'width': (0.25*(prm.length+offset))+'rem'  }
             });
-	    text.style()
+	    //text.style()
             
             let tap_evt = (t1,t2,t3) => {
                 try {
@@ -126,6 +153,13 @@ module.exports = class extends mofron.class.Component {
 		    for (let idx in chd) {
                         if (chd[idx].id() === t1.id()) {
                             t3.select(parseInt(idx));
+
+			    /* event listenter */
+			    let sel_evt = t3.selectEvent();
+			    for (let sidx in sel_evt) {
+                                sel_evt[sidx][0](t3, parseInt(idx), sel_evt[sidx][1]);
+                            }
+
 			    break;
 			}
 		    }
@@ -137,8 +171,8 @@ module.exports = class extends mofron.class.Component {
 	    frame.event(new Tap(new ConfArg(tap_evt,this)));
             frame.config(cnf);
             frame.child(text);
-            
             this.child(frame);
+	    this.height(this.height());
         } catch (e) {
             console.error(e.stack);
             throw e;
@@ -215,16 +249,16 @@ module.exports = class extends mofron.class.Component {
             }
             frm_cnf['height'] = prm;
             this.data('frame-cnf', frm_cnf);
-            
-	    let chd = this.child();
+
+            let chd = this.child();
             for (let cidx in chd) {
                 if (true !== comutl.isinc(chd[cidx],'Frame')) {
                     continue;
-		}
-		chd[cidx].height(prm);
-		chd[cidx].child()[0].size(comutl.sizediff(prm,"0.06rem"));
-	    }
-	} catch (e) {
+                }
+                chd[cidx].height(prm);
+                chd[cidx].child()[0].size(comutl.sizediff(prm,"0.06rem"));
+            }
+        } catch (e) {
             console.error(e.stack);
             throw e;
         }
